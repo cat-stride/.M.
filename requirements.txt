@@ -1,0 +1,10 @@
+appdirs==1.4.3
+HTMLParser==0.0.2
+packaging==16.8
+pkg-resources==0.0.0
+pyparsing==2.2.0
+pypng==0.0.18
+PyQRCode==1.2.1
+qrcode==5.3
+requests==2.13.0
+six==1.10.0
