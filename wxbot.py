@@ -84,7 +84,7 @@ class WXBot:
         self.sync_key_str = ''
         self.sync_key = []
         self.sync_host = ''
-
+        self.temp_record = ''
 
         self.batch_count = 50    #一次拉取50个联系人的信息
         self.full_user_name_list = []    #直接获取不到通讯录时，获取的username列表
@@ -127,13 +127,15 @@ class WXBot:
         :param encoding: 字符串解码方式
         :return: 转换后的Unicode字符串
         """
-        if isinstance(string, str):
-            # return string.decode(encoding)
-            return string
-        elif isinstance(string, unicode):
-            return string
-        else:
-            raise Exception('Unknown Type')
+        print(type(string))
+        return string
+        # if isinstance(string, str):
+        #     # return string.decode(encoding)
+        #     return string
+        # elif isinstance(string, bytes):
+        #     return string.decode(encoding)
+        # else:
+        #     raise Exception('Unknown Type')
 
     def get_contact(self):
         """获取当前账户的所有相关账号(包括联系人、公众号、群聊、特殊账号)"""
