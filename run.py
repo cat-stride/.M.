@@ -3,51 +3,106 @@
 from wxbot import *
 import oneshot
 import json
+import random
 
 class OneShot_Robot(WXBot):
     def handle_msg_all(self, msg):
-        if msg['msg_type_id'] == 4 and msg['content']['type'] == 0:
-            # 联系人消息  文本消息
-            print(msg['user']['name']+":"+msg['content']['data'])
-            msg['content']['data']
-            
-
-            if msg['content']['data'] in ['get','GET','取','要']:
-                oneshots = oneshot.get_oneshot()
-                rt = ''
-                for shot in oneshots:
-                    rt += '子弹id :' + str(shot['bid']) + '\n' + "符号名：" + shot['sym_name']  + '\n' + \
-                     "内容：" + shot['content']  + '\n' +  " 日期：" +str(shot['timestamp']) + '\n'
-                if len(oneshots) == 0:
-                    rt = '没有记录'
-                self.send_msg_by_uid(rt, msg['user']['id'])
-            elif msg['content']['data'] in ['y','Y','yes','是','是的']:
-                print('temp:',self.temp_record)
-                data = {}
-                data["sym_name"] = "todo"
-                data["content"] = self.temp_record      
-                post_data = json.dumps(data)
-                r = oneshot.post_oneshot(post_data)
-                if r != 200:
-                    self.send_msg_by_uid('Post failed', msg['user']['id'])
+        print(msg['msg_type_id'])
+        if msg['msg_type_id'] == 4:
+            # # 联系人消息
+            if msg['content']['type'] == 0: # 文本
+                user_message = msg['content']['data'].strip()
+                print(msg['msg_type_id'],msg['user']['id'],msg['user']['name'])
+                if oneshot.ping() != 200:
+                    self.send_msg_by_uid('服务没有启动，请耐心等待。', msg['user']['id'])
+                    return
                 else:
-                    self.send_msg_by_uid('Saved', msg['user']['id'])
-            else:
-                self.temp_record = msg['content']['data'].strip()
-                self.send_msg_by_uid('是否将上述内容保存为一条笔记？', msg['user']['id'])
+                    if user_message in ['get','GET','取','要']:
+                        self.last_msg = 'get'
+                        rt = oneshot.get_list()
+                        self.send_msg_by_uid(rt, msg['user']['id'])
+
+                    elif user_message in ['1','2','3','4','5','6','7']:
+                        if len(self.temp_record) == 0 or self.last_msg in ['get','help','number']:
+                            self.send_msg_by_uid('想唠嗑？请继续。。。', msg['user']['id'])
+                            return
+                        rt = oneshot.save_oneshot(user_message, self.temp_record)
+                        self.send_msg_by_uid(rt, msg['user']['id'])
+                        self.last_msg = 'number'
+                    elif user_message in ['help','HELP','帮助','?','？']:
+                        self.last_msg = 'help'
+                        rt = oneshot.help()
+                        self.send_msg_by_uid(rt, msg['user']['id'])
+                    else:
+                        self.last_msg = 'other'
+                        self.temp_record = user_message
+                        rt = oneshot.select_oneshot() 
+                        self.send_msg_by_uid(rt, msg['user']['id'])
+            elif msg['content']['type'] == 1: # 地理位置
+                rt = '我在广州等你:-O'
+                self.send_msg_by_uid(rt, msg['user']['id'])
+            elif msg['content']['type'] == 3: # 图片
+                no = random.randint(1, 8)
+                rt = '/pic/' + str(no) + '.jpg'
+                self.send_img_msg_by_uid(rt, msg['user']['id'])
+            elif msg['content']['type'] == 4: # 语音
+                rt = '不是说了么，我只认识文字呢'
+                self.send_msg_by_uid(rt, msg['user']['id'])
+            elif msg['content']['type'] == 5: # 名片
+                rt = '只聊天，不谈感情'
+                self.send_msg_by_uid(rt, msg['user']['id'])
+            elif msg['content']['type'] == 6: # 动画
+                rt = '要求这么高，有红包吗？'
+                self.send_msg_by_uid(rt, msg['user']['id'])
+            elif msg['content']['type'] == 7: # 分享
+                rt = '感谢分享'
+                self.send_msg_by_uid(rt, msg['user']['id'])
+            elif msg['content']['type'] == 8: # 视频
+                rt = '要求这么高，有红包吗？'
+                self.send_msg_by_uid(rt, msg['user']['id'])
+            elif msg['content']['type'] == 9: # 视频电话
+                self.send_msg_by_uid(rt, msg['user']['id'])
+            elif msg['content']['type'] == 10: # 撤回消息
+                rt = '有话好好说，莫急'
+                self.send_msg_by_uid(rt, msg['user']['id'])
+            elif msg['content']['type'] == 11: # 空内容
+                rt = 'what?'
+                self.send_msg_by_uid(rt, msg['user']['id'])
+            elif msg['content']['type'] == 12: # 红包
+                rt = '谈钱伤感情'
+                self.send_msg_by_uid(rt, msg['user']['id'])
+            elif msg['content']['type'] == 13: # 小视频
+                rt = '一个人偷偷看就好'
+                self.send_msg_by_uid(rt, msg['user']['id'])
+            else: # 99 unkown type message
+                print(msg['msg_type_id'],msg['user']['id'],msg['user']['name'])
+                self.send_msg_by_uid('我只识字哇(=@__@=)', msg['user']['id'])
+            # self.send_msg_by_uid('contact message', msg['user']['id'])
+        elif msg['msg_type_id'] == 37: # 通过好友认证
+            RecommendInfo = {}
+            ticket = msg['content']['data']['Ticket']
+            username = msg['content']['data']['UserName']
+            nickname = msg['content']['data']['NickName']
+            RecommendInfo['UserName'] = username
+            RecommendInfo['Ticket'] = ticket
+            self.apply_useradd_requests(RecommendInfo)
+            self.get_big_contact()
+            print('self.get_big_contact()')
+
+            # 注册用户
+            return
+            # self.send_msg(username,'hello, ' + nickname, isfile=False)
         else:
-            self.send_msg_by_uid('是不是在考验我？可以发文本消息吗？', msg['user']['id'])
-
-
-
+            self.send_msg_by_uid('wait a moment...', msg['user']['id'])
 
 
 def create_wxrobot():
     osr = OneShot_Robot()
     osr.DEBUG ==True
-    osr.conf['qr'] = 'tty' #png
+    osr.conf['qr'] = 'png'#'tty' #png
     osr.is_big_contact = False
     osr.temp_record = ''
+    osr.last_msg = ''
     return osr
 
 

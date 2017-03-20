@@ -84,7 +84,8 @@ class WXBot:
         self.sync_key_str = ''
         self.sync_key = []
         self.sync_host = ''
-        self.temp_record = ''
+        self.temp_record = ''  # 上一条文字消息
+        self.last_msg = '' # 上一条消息类型
 
         self.batch_count = 50    #一次拉取50个联系人的信息
         self.full_user_name_list = []    #直接获取不到通讯录时，获取的username列表
@@ -750,6 +751,8 @@ class WXBot:
                     break
                 elif retcode == '1101':  # 从其它设备上登了网页微信
                     break
+                elif retcode == '1102':  # 服务器轮回地址发生变化，更新源服务
+                    self.test_sync_check()
                 elif retcode == '0':
                     if selector == '2':  # 有新消息
                         r = self.sync()
