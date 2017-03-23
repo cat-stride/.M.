@@ -3,8 +3,9 @@ import urllib.request
 import json
 import time
 
-WEB_REST_API = 'http://112.74.191.114/api/bullets'
-PING = 'http://112.74.191.114'
+WEB_REST_API = 'http://127.0.0.1:5000/wechat/api/bullets'
+PING = 'http://127.0.0.1:5000'
+# PING = 'http://112.74.191.114'
 
 def post_oneshot(data):
 	r = requests.post(WEB_REST_API, data=data)
@@ -45,11 +46,15 @@ def help():
 	return info
 
 def ping():
-	p = urllib.request.urlopen(PING)
-	if p.getcode() == 200:
-		return 200
-	else:
+	try:
+		p = urllib.request.urlopen(PING)
+		if p.getcode() == 200:
+			return 200
+		else:
+			return 404
+	except URLError:
 		return 404
+
 
 def get_list():
 	oneshots = get_oneshot()
@@ -74,6 +79,7 @@ def select_oneshot():
 	6.事件(event)
 	7.唠嗑(LK)
 	不回复或回复7都将不保存
+	需要帮助请回复help
 	"""
 	return radio
 
@@ -132,7 +138,25 @@ def select_bullets_by_type(type):
 	# 4.待办完成(done)
 	# 5.一般笔记(note)
 	# 6.事件(event)
-	pass
+	url = WEB_REST_API + '\\' + type
+	r = requests.get(url)
+	if r.status_code == 200:
+		return r.json()
+	return 404
+
+
 
 def get_today_bullets():
 	pass
+
+def register(wechat_id):
+	url = WEB_REST_API + "/register"
+	data = {}
+	data['wechat_id'] = wechat_id
+	post_data = json.dumps(data)
+	# print(url,post_data)
+	r = requests.post(url, data=post_data)
+	# print('r:',r)
+	if r.status_code == 200:
+		return r.json()
+	return 404
