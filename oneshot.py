@@ -3,8 +3,8 @@ import urllib.request
 import json
 import time
 
-WEB_REST_API = 'http://127.0.0.1:5000/wechat/api/bullets'
-PING = 'http://127.0.0.1:5000'
+WEB_REST_API = 'http://112.74.191.114/wechat/api/bullets'
+PING = 'http://112.74.191.114'
 # PING = 'http://112.74.191.114'
 
 def post_oneshot(data):
@@ -180,8 +180,8 @@ def register(wechat_id):
 		return r.json()
 	return 404
 
-def auto_pull_bullets(user_id, btype):
-	url = WEB_REST_API + '/type/?user_id=' + user_id + '&type=' + btype
+def auto_pull_bullets(user_id, btype1, btype2, btype3):
+	url = WEB_REST_API + '/types/?user_id=' + user_id + '&type1=' + btype1 + '&type2=' + btype2 + '&type3=' + btype3
 	r = requests.get(url)
 	# print(r.text)
 	if r.status_code == 200:

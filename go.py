@@ -141,7 +141,7 @@ def active_send_msg():
         # print(user_id)
         if len(user_id) == 0:
             continue
-        rt = oneshot.auto_pull_bullets(user_id, 'today')
+        rt = oneshot.auto_pull_bullets(user_id, 'today','delay','future')
         if rt == '没有记录':
             # print('no records')
             continue
@@ -154,7 +154,7 @@ tr.Talk = False
 itchat.auto_login(True, enableCmdQR=2)
 
 scheduler = BS()
-scheduler.add_job(func=active_send_msg, trigger='cron',day_of_week='0-6', hour='11', minute='25')
+scheduler.add_job(func=active_send_msg, trigger='cron',day_of_week='0-6', hour='8', minute='10')
 scheduler.start()
 
 # ##########old way for timer###########
