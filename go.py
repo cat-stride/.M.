@@ -1,4 +1,5 @@
 import time
+from apscheduler.schedulers.background import BackgroundScheduler as BS
 import oneshot
 import itchat
 from itchat.content import *
@@ -6,29 +7,39 @@ from tuling import T_Robot as TR
 
 @itchat.msg_register([TEXT, MAP, CARD, NOTE, SHARING])
 def text_reply(msg):
-    print(msg)
-    print(itchat.search_friends(userName=msg['FromUserName']))
-    user_message = msg['Content'].strip()  
+    # print(msg)
+    # print(itchat.search_friends(userName=msg['FromUserName']))
+    # print('RemarkName:',itchat.search_friends(userName=msg['FromUserName'])['RemarkName'])
+    user_message = msg['Content'].strip() 
+    user_id = itchat.search_friends(userName=msg['FromUserName'])['RemarkName']
     msgid = msg['NewMsgId']
 
     if oneshot.ping() != 200:
-        itchat.send('宝宝休息时', msg['FromUserName'])
+        itchat.send('服务器在休息，你让宝宝怎么办？', msg['FromUserName'])
         return
 
     else:
         if user_message in ['get all','GET ALL']: # 取全部记录
             itchat.last_msg = 'get all'
-            rt = oneshot.get_list()
+            rt = oneshot.get_list(user_id)
+            if rt == 404:
+                return
             itchat.send(rt, msg['FromUserName'])
 
         elif user_message in ['get']: # 取今天记录
             itchat.last_msg = 'get'
-            rt = '上线中'
+            rt = oneshot.get_date_bullets(user_id)
+            # rt = '上线date中。'
+            if rt == 404:
+                return
             itchat.send(rt, msg['FromUserName'])
 
         elif user_message in ['today','delay','done','future','note','event']: # 取分类记录
             itchat.last_msg = 'type'
-            rt = '上线中'
+            rt = oneshot.select_bullets_by_type(user_id, user_message)
+            # print(rt)
+            if rt == 404:
+                return
             itchat.send(rt, msg['FromUserName'])
 
         elif user_message in ['1','2','3','4','5','6','7']:
@@ -36,7 +47,7 @@ def text_reply(msg):
             if len(itchat.temp_record) == 0 or itchat.last_msg in ['get','get all','help','number','type']:
                 itchat.send('想唠嗑？请继续。。。', msg['FromUserName'])
                 return
-            rt = oneshot.save_oneshot(user_message, itchat.temp_record)
+            rt = oneshot.save_oneshot(user_id,user_message, itchat.temp_record)
             itchat.send(rt, msg['FromUserName'])
             itchat.last_msg = 'number'
 
@@ -58,12 +69,12 @@ def download_files(msg):
 
 @itchat.msg_register(FRIENDS)
 def add_friend(msg):
-    print('add_friend->NickName:',msg['RecommendInfo']['NickName'])
-    print('add_friend->UserName:',msg['RecommendInfo']['UserName'])
-    print('add_friend->Alias:',msg['RecommendInfo']['Alias'])
-    print('FromUserName:',msg['FromUserName'])
+    # print('add_friend->NickName:',msg['RecommendInfo']['NickName'])
+    # print('add_friend->UserName:',msg['RecommendInfo']['UserName'])
+    # print('add_friend->Alias:',msg['RecommendInfo']['Alias'])
+    # print('FromUserName:',msg['FromUserName'])
     rt = oneshot.register(msg['RecommendInfo']['Alias']) # 
-    print('rt:',rt)
+    # print('rt:',rt)
     if rt == 404:
         return
     user_id = rt['id']
@@ -78,28 +89,80 @@ def text_reply(msg):
     # if msg['isAt']:
         # itchat.send(u'@%s\u2005I received: %s' % (msg['ActualNickName'], msg['Content']), msg['FromUserName'])
 
-    print(msg['ActualUserName'])
+    # print(msg['ActualUserName'])
     uid = msg['FromUserName']
     msgcontent = msg['Content'].strip()
 
     if msgcontent in ['stop','STOP']:
         tr.Talk = False
-        rt = '轻轻地我走了，正如我轻轻地来，挥一挥衣袖，不带走一片云彩'
+        rt = '人生苦短，我再睡会'
         itchat.send(rt, msg['FromUserName'])
-
-    if msgcontent in ['start','START']:
-        tr.Talk = True
 
     if tr.Talk:
         rt = tr.post_msg_to_tulingrobot(uid,msgcontent)
         if len(rt) > 0:
             itchat.send(rt, msg['FromUserName'])
 
+    if msgcontent in ['start','START']:
+        tr.Talk = True
+        rt = '轻轻地我来了，正如我轻轻地走，挥一挥衣袖，总带来一片云彩'
+        itchat.send(rt, msg['FromUserName'])        
+
+# ##########old way for timer###########
+# def active_send_msg():
+#     while True:
+#         print('threading...')
+#         tp = time.strftime('%H%M%S', time.localtime())
+#         # tp = time.strftime('%H%M', time.localtime())
+#         if tp == '080001':
+#             memberList = itchat.get_friends()
+#             # print(memberList)
+#             for member in memberList:
+#                 # print(member['RemarkName'])
+#                 user_id = member['RemarkName']
+#                 print(user_id)
+#                 if len(user_id) == 0:
+#                     continue
+#                 rt = oneshot.auto_pull_bullets(user_id, 'today')
+#                 if rt == '没有记录':
+#                     print('no records')
+#                     continue
+#                 itchat.send(rt, member['UserName'])
+#                 time.sleep(.5)
+#             time.sleep(10)
+# ##########old way for timer###########
+
+
+def active_send_msg():
+    memberList = itchat.get_friends()
+    # print(memberList)
+    for member in memberList:
+        user_id = member['RemarkName']
+        # print(user_id)
+        if len(user_id) == 0:
+            continue
+        rt = oneshot.auto_pull_bullets(user_id, 'today')
+        if rt == '没有记录':
+            # print('no records')
+            continue
+        itchat.send(rt, member['UserName'])
+
 
 
 tr = TR()
-tr.Talk = True
+tr.Talk = False
 itchat.auto_login(True, enableCmdQR=2)
+
+scheduler = BS()
+scheduler.add_job(func=active_send_msg, trigger='cron',day_of_week='0-6', hour='11', minute='25')
+scheduler.start()
+
+# ##########old way for timer###########
+# send_msg_thread = threading.Thread(target=active_send_msg)
+# send_msg_thread.setDaemon(True)
+# send_msg_thread.start()
+# ##########old way for timer###########
+
 itchat.run()
 
 # 联系人 msg 消息体

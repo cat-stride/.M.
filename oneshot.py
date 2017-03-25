@@ -13,17 +13,9 @@ def post_oneshot(data):
 		return 200
 	return 'Post failed'
 
-def update_oneshot(bid, data):
-	body['sym_name'] = data['sym_name']
-	body['content'] = data['content']
-	put_data = json.dumps(body)	
-	r = requests.put(WEB_REST_API + '/' +str(bid), data=put_data)
-	if r.status_code == 200:
-		return 200
-	return 'Update failed'
-
-def get_oneshot():
-	r = requests.get(WEB_REST_API)
+def get_oneshot(user_id):
+	url = WEB_REST_API + '/?user_id=' + user_id
+	r = requests.get(url)
 	if r.status_code == 200:
 		return r.json()
 	return 'Not found'
@@ -39,9 +31,10 @@ def help():
 	6.事件(event)
 	发送一条消息给机器人，机器人提示是否保存
 	发送'help'或'?'获取帮助信息
-	发送'get'获取今天的记录
-	发送'get all'获取所有记录
-	发送类型英文代码，获取该类型记录，如发送'delay'，获取延期待办记录
+	发送'get'获取本人今天的记录
+	发送'get all'获取本人所有记录
+	发送类型英文代码，获取本人该类型记录，如发送'delay'，获取延期待办记录
+	机器人每天早上8:00会推送今日待办提醒
 	"""
 	return info
 
@@ -55,18 +48,16 @@ def ping():
 	except URLError:
 		return 404
 
-
-def get_list():
-	oneshots = get_oneshot()
+def get_list(user_id):
+	oneshots = get_oneshot(user_id)
 	rt = ''
 	for shot in oneshots:
-		rt += '子弹id :' + str(shot['bid']) + '\n' + \
-		"符号名：" + shot['sym_name']  + '\n' + "内容：" + \
-		shot['content']  + '\n' +  "日期：" +str(time.localtime(shot['timestamp'])) + '\n'
+		rt += '子弹id :' + str(shot['id']) + '\n' + \
+		"符号名：" + shot['type']  + '\n' + "内容：" + \
+		shot['content']  + '\n' +  "记录日期：" + time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(shot['timestamp'])) + '\n'
 	if len(oneshots) == 0:
 		rt = '没有记录'
 	return rt
-
 
 def select_oneshot():
 	radio = """
@@ -83,46 +74,52 @@ def select_oneshot():
 	"""
 	return radio
 
-def save_oneshot(type, content):
+def save_oneshot(user_id, type, content):
 	data = {}
 	if int(type) == 1:
-		data['sym_name'] = 'today'
+		data['type'] = 'today'
 		data['content'] = content
+		data['user_id'] = user_id
 		post_data = json.dumps(data)
 		rt = post_oneshot(post_data)
 		if rt != 200:
 			return 'Today post failed'
 	elif int(type) == 2:
-		data['sym_name'] = 'delay'
+		data['type'] = 'delay'
 		data['content'] = content
+		data['user_id'] = user_id
 		post_data = json.dumps(data)
 		rt = post_oneshot(post_data)
 		if rt != 200:
 			return 'Delay post failed'
 	elif int(type) == 3:
-		data['sym_name'] = 'future'
+		data['type'] = 'future'
 		data['content'] = content
+		data['user_id'] = user_id
 		post_data = json.dumps(data)
 		rt = post_oneshot(post_data)
 		if rt != 200:
 			return 'Future post failed'
 	elif int(type) == 4:
-		data['sym_name'] = 'done'
+		data['type'] = 'done'
 		data['content'] = content
+		data['user_id'] = user_id
 		post_data = json.dumps(data)
 		rt = post_oneshot(post_data)
 		if rt != 200:
 			return 'Done post failed'
 	elif int(type) == 5:
-		data['sym_name'] = 'note'
+		data['type'] = 'note'
 		data['content'] = content
+		data['user_id'] = user_id
 		post_data = json.dumps(data)
 		rt = post_oneshot(post_data)
 		if rt != 200:
 			return 'Note post failed'
 	elif int(type) == 6:
-		data['sym_name'] = 'event'
+		data['type'] = 'event'
 		data['content'] = content
+		data['user_id'] = user_id
 		post_data = json.dumps(data)
 		rt = post_oneshot(post_data)
 		if rt != 200:
@@ -131,23 +128,45 @@ def save_oneshot(type, content):
 		return '那继续唠吧'
 	return 'Saved'
 
-def select_bullets_by_type(type):
+def select_bullets_by_type(user_id, btype):
 	# 1.今日待办(today)
 	# 2.延期待办(delay)
 	# 3.预订待办(future)
 	# 4.待办完成(done)
 	# 5.一般笔记(note)
 	# 6.事件(event)
-	url = WEB_REST_API + '\\' + type
+	url = WEB_REST_API + '/type/?user_id=' + user_id + '&type=' + btype
 	r = requests.get(url)
+	# print(r.text)
 	if r.status_code == 200:
-		return r.json()
+		oneshots = r.json()
+		rt = ''
+		for shot in oneshots:
+			rt += '子弹id :' + str(shot['id']) + '\n' + \
+			"符号名：" + shot['type']  + '\n' + "内容：" + \
+			shot['content']  + '\n' +  "记录日期：" + time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(shot['timestamp'])) + '\n'
+		if len(oneshots) == 0:
+			rt = '没有记录'
+		return rt
 	return 404
 
-
-
-def get_today_bullets():
-	pass
+def get_date_bullets(user_id):
+	timestamp = int(time.time())
+	# date = time.strftime('%Y-%m-%d',time.localtime(timestamp))
+	url = WEB_REST_API + '/date/?user_id=' + user_id + '&timestamp=' + str(timestamp)
+	r = requests.get(url)
+	# print(r.text)
+	if r.status_code == 200:
+		oneshots = r.json()
+		rt = ''
+		for shot in oneshots:
+			rt += '子弹id :' + str(shot['id']) + '\n' + \
+			"符号名：" + shot['type']  + '\n' + "内容：" + \
+			shot['content']  + '\n' +  "日期：" + time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(shot['timestamp'])) + '\n'
+		if len(oneshots) == 0:
+			rt = '没有记录'
+		return rt
+	return 404
 
 def register(wechat_id):
 	url = WEB_REST_API + "/register"
@@ -159,4 +178,20 @@ def register(wechat_id):
 	# print('r:',r)
 	if r.status_code == 200:
 		return r.json()
+	return 404
+
+def auto_pull_bullets(user_id, btype):
+	url = WEB_REST_API + '/type/?user_id=' + user_id + '&type=' + btype
+	r = requests.get(url)
+	# print(r.text)
+	if r.status_code == 200:
+		oneshots = r.json()
+		rt = ''
+		for shot in oneshots:
+			rt += '子弹id :' + str(shot['id']) + '\n' + \
+			"符号名：" + shot['type']  + '\n' + "内容：" + \
+			shot['content']  + '\n' +  "记录日期：" + time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(shot['timestamp'])) + '\n'
+		if len(oneshots) == 0:
+			rt = '没有记录'
+		return rt
 	return 404
