@@ -105,7 +105,7 @@ def text_reply(msg):
 
     if msgcontent in ['start','START']:
         tr.Talk = True
-        rt = '轻轻地我来了，正如我轻轻地走，挥一挥衣袖，总带来一片云彩'
+        rt = '轻轻地我来了'
         itchat.send(rt, msg['FromUserName'])        
 
 # ##########old way for timer###########

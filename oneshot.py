@@ -11,7 +11,7 @@ def post_oneshot(data):
 	r = requests.post(WEB_REST_API, data=data)
 	if r.status_code == 200:
 		return 200
-	return 'Post failed'
+	return 'WEB 服务没有启动'
 
 def get_oneshot(user_id):
 	url = WEB_REST_API + '/?user_id=' + user_id
@@ -83,7 +83,7 @@ def save_oneshot(user_id, type, content):
 		post_data = json.dumps(data)
 		rt = post_oneshot(post_data)
 		if rt != 200:
-			return 'Today post failed'
+			return 'WEB 服务没有启动'
 	elif int(type) == 2:
 		data['type'] = 'delay'
 		data['content'] = content
@@ -91,7 +91,7 @@ def save_oneshot(user_id, type, content):
 		post_data = json.dumps(data)
 		rt = post_oneshot(post_data)
 		if rt != 200:
-			return 'Delay post failed'
+			return 'WEB 服务没有启动'
 	elif int(type) == 3:
 		data['type'] = 'future'
 		data['content'] = content
@@ -107,7 +107,7 @@ def save_oneshot(user_id, type, content):
 		post_data = json.dumps(data)
 		rt = post_oneshot(post_data)
 		if rt != 200:
-			return 'Done post failed'
+			return 'WEB 服务没有启动'
 	elif int(type) == 5:
 		data['type'] = 'note'
 		data['content'] = content
@@ -115,7 +115,7 @@ def save_oneshot(user_id, type, content):
 		post_data = json.dumps(data)
 		rt = post_oneshot(post_data)
 		if rt != 200:
-			return 'Note post failed'
+			return 'WEB 服务没有启动'
 	elif int(type) == 6:
 		data['type'] = 'event'
 		data['content'] = content
@@ -123,7 +123,7 @@ def save_oneshot(user_id, type, content):
 		post_data = json.dumps(data)
 		rt = post_oneshot(post_data)
 		if rt != 200:
-			return 'Event post failed'
+			return 'WEB 服务没有启动'
 	elif int(type) == 7:
 		return '那继续唠吧'
 	return 'Saved'
